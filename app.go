@@ -34,7 +34,7 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 	restart:
 		mu.Lock()
 		for url, status := range urlsStatus {
-			if status.startedProcessing == false && status.depth < maxDepth {
+			if !status.startedProcessing && status.depth < maxDepth {
 				status.startedProcessing = true
 				mu.Unlock()
 				body, urls, err := fetcher.Fetch(url)
