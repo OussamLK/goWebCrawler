@@ -8,7 +8,6 @@ import (
 
 type ProcessStatus struct {
 	startedProcessing bool
-	finishedProcessed bool
 	depth             int
 }
 
@@ -29,8 +28,8 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 	var urlsStatus URLStatus = make(URLStatus)
 	urlsStatus[url] = ProcessStatus{}
 	var mu sync.Mutex
-	done := make(chan int, workerCount)
-	fetchWorker := func() {
+	done := make(chan int)
+	fetchWorker := func(id int) {
 	restart:
 		mu.Lock()
 		for url, status := range urlsStatus {
@@ -42,7 +41,7 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 					fmt.Println(err)
 					return
 				}
-				fmt.Printf("fetched: %s with content %q\n", url, body)
+				fmt.Printf("worker %d fetched: %s with content %q\n", id, url, body)
 				mu.Lock()
 				for _, discoveredUrl := range urls {
 					_, ok := urlsStatus[discoveredUrl]
@@ -58,7 +57,7 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 		done <- 0
 	}
 	for i := 0; i < workerCount; i++ {
-		go fetchWorker()
+		go fetchWorker(i)
 	}
 	workersDone := 0
 	for range done {
